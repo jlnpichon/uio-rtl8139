@@ -107,14 +107,19 @@ void pci_resources_unmap(struct rtl8139_dev *nic)
 }
 
 int uio_device_find(struct rtl8139_dev *nic,
+		char *sysfs_pci_path,
 		char *directory, size_t directory_len)
 {
 	DIR *dir;
 	struct dirent *e;
 	char *endptr;
 	unsigned long n;
+	char uio_path[1024];
 
-	dir = opendir("/sys/bus/pci/devices/0000:00:04.0/uio/");
+	strncpy(uio_path, sysfs_pci_path, 1024);
+	strncat(uio_path, "/uio/", 1024 - strlen(uio_path));
+
+	dir = opendir(uio_path);
 	if (dir == NULL)
 		return -1;
 
@@ -132,8 +137,10 @@ int uio_device_find(struct rtl8139_dev *nic,
 
 		snprintf(nic->uio_device_name, sizeof(nic->uio_device_name),
 				"/dev/uio%d", n);
-		snprintf(directory, directory_len,
-				"/sys/bus/pci/devices/0000:00:04.0/uio/uio%d", n);
+		strncpy(directory, uio_path, directory_len);
+		snprintf(directory + strlen(directory),
+				directory_len - strlen(directory),
+				"/uio%d", n);
 		break;
 	}
 
@@ -356,11 +363,26 @@ int main(int argc, char *argv[])
 {
 	struct rtl8139_dev nic;
 	int r;
+	char sysfs_pci_path[1024];
 	char resources_directory[1024];
 
 	memset(&nic, 0, sizeof(nic));
 
-	uio_device_find(&nic, resources_directory, 1024);
+	r = find_sysfs_device(PCI_VENDOR_ID_REALTEK, PCI_DEVICE_ID_REALTEK_8139,
+			sysfs_pci_path, 1024);
+	if (r < 0) {
+		fprintf(stderr, "rtl8139 PCI device (0x%x:0x%x) not found\n",
+				PCI_VENDOR_ID_REALTEK, PCI_DEVICE_ID_REALTEK_8139);
+		return 1;
+	}
+
+	r = uio_device_find(&nic, sysfs_pci_path, resources_directory, 1024);
+	if (r < 0) {
+		fprintf(stderr, "uio device not found\n");
+		return 1;
+	}
+
+	fprintf(stderr, "resources_directory: %s\n", resources_directory);
 	pci_resources_map(&nic, resources_directory);
 
 	/* prevent from being swapped out */
@@ -376,6 +398,7 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
+	fprintf(stderr, "1\n");
 	rtl8139_init(&nic);
 	rtl8139_print_mac_addr(&nic);
 
