@@ -27,12 +27,16 @@ Finally it opens and map the DMA buffer allocated by the kernel module.
 user/rtl8139_user
 
 An easy way to test it is to use qemu with an emulated rtl8139. For example:
+```
 qemu-system-x86_64 -netdev tap,ifname=tap0,id=network0,script=no,downscript=no \
                    -device rtl8139,netdev=network0                             \
                    -kernel ./bzImage -initrd ./rootfs.cpio.gz                  \
                    -append "rdinit=/sbin/init console=ttyS0"                   \
                    -nographic
+```
 
 qemu will be started with a rtl8139 linked to the host tap0 device. So you can
 packets to the rtl8139 by using the host tap0 interface. e.g.:
+```
 tcpreplay -i tap0 mycapfile.pcap
+```
