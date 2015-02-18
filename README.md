@@ -1,6 +1,7 @@
 This GIT repository contains the uio driver and the userspace driver for
 the rtl8139 chip. It also demonstrates how to allocate and share a DMA buffer
 in with the userland.
+The ultimate goal is to achieve zero copy packet processing in userspace.
 
 # How it works
 
