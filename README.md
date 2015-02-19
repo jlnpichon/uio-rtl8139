@@ -37,7 +37,15 @@ qemu-system-x86_64 -netdev tap,ifname=tap0,id=network0,script=no,downscript=no \
 ```
 
 qemu will be started with a rtl8139 linked to the host tap0 device. So you can
-packets to the rtl8139 by using the host tap0 interface. e.g.:
+send packets to the rtl8139 by using the host tap0 interface. e.g.:
 ```
 tcpreplay -i tap0 mycapfile.pcap
 ```
+
+On the guest, you have to load the kernel, and then execute the userspace program
+```
+insmod uio_rtl8139.ko
+./rtl8139_user
+```
+
+The rtl8139_user binary will dump all incoming packets on the rtl8139 NIC.
